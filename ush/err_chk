@@ -19,14 +19,14 @@ if [ -z "${err}" ]; then
     err_exit "RETURN CODE NOT EXPORTED prior to running err_chk"
     exit
 fi
-if [ ${err} -eq 0 ]; then
+if [ "${err}" -eq 0 ]; then
     echo "${pgm} completed cleanly"
     exit
 fi
 
 #  If error return code is 139, then program segfaulted.
 #  Look for any core files, and save them to a directory in /ptmp
-if [ ${err} -eq 139 ]; then
+if [ "${err}" -eq 139 ]; then
     if [ -z "${COREROOT}" ]; then
         >&2 echo "SegFault reported but \$COREROOT variable not set. Will not copy files."
     else
@@ -34,7 +34,10 @@ if [ ${err} -eq 139 ]; then
         if [ -z "${DATA}" ]; then
             >&2 echo "  \$DATA variable not set. Cannot copy core files!"
         else
-            cd "${DATA}"
+            if ! cd "${DATA}"; then
+				>&2 echo "  Cannot cd to DATA directory ${DATA}. Cannot copy core files!"
+				err_exit $@
+			fi
             if [ -s core ]; then
                 mkdir -p "${COREROOT}"
                 cp -p core "${COREROOT}/${pgm}.$$.core"
