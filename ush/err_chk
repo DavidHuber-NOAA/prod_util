@@ -35,9 +35,9 @@ if [ "${err}" -eq 139 ]; then
             >&2 echo "  \$DATA variable not set. Cannot copy core files!"
         else
             if ! cd "${DATA}"; then
-				>&2 echo "  Cannot cd to DATA directory ${DATA}. Cannot copy core files!"
-				err_exit $@
-			fi
+                >&2 echo "  Cannot cd to DATA directory ${DATA}. Cannot copy core files!"
+                err_exit $@
+            fi
             if [ -s core ]; then
                 mkdir -p "${COREROOT}"
                 cp -p core "${COREROOT}/${pgm}.$$.core"
