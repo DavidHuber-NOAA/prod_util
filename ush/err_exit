@@ -16,10 +16,12 @@ jobid=${jobid:-"UNKNOWN"}  # Job ID
 COREROOT=${COREROOT:-""}   # Directory to copy core files to
 DATA=${DATA:-""}           # Working directory
 SENDECF=${SENDECF:-"NO"}   # Send message to ecflow
-ECF_NAME=${ECF_NAME:-""}    # Name of the ECF Job
+ECF_NAME=${ECF_NAME:-""}   # Name of the ECF Job
 PBS_JOBID=${PBS_JOBID:-""} # PBS Job ID
+ECF_HOST=${ECF_HOST:-""}   # ecflow hostname
+ECF_JOBOUT=${ECF_JOBOUT:-""} # ecflow job output file
 
-msg1=${@:-Job ${jobid} failed}
+msg1=${*:-Job ${jobid} failed}
 if [[ -n "${pgm}" ]]; then
     msg1+=", ERROR IN ${pgm}"
 fi
@@ -64,7 +66,11 @@ fi
 # Write to ecflow log:
 if [[ "${SENDECF}" == "YES" ]]; then
     timeout 30 ecflow_client --msg "${ECF_NAME}: ${msg1}"
-    timeout 30 ssh "${ECF_HOST}" "echo \"${msg2}\" >> ${ECF_JOBOUT:?}"
+    if [[ -z "${ECF_JOBOUT}" || "${ECF_HOST}" == "" ]]; then
+        echo "FATAL ERROR Unable to write to ecflow server as either ECF_HOST or ECF_JOBOUT are undefined!!"
+    else
+        timeout 30 ssh "${ECF_HOST}" "echo \"${msg2}\" >> ${ECF_JOBOUT}"
+    fi
 fi
 
 # KILL THE JOB:
