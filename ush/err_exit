@@ -9,57 +9,75 @@
 # script: jobid, SENDECF, pgm, pgmout, DATA. One can provide
 # a message for the logfile by passing it to the script as an argument.
 
-msg1=${@:-Job $jobid failed}
-if [ -n "$pgm" ]; then
-  msg1+=", ERROR IN $pgm"
+err=${err:-""}             # Return code from program
+pgm=${pgm:-""}             # Program name
+pgmout=${pgmout:-""}       # Program output file
+jobid=${jobid:-"UNKNOWN"}  # Job ID
+COREROOT=${COREROOT:-""}   # Directory to copy core files to
+DATA=${DATA:-""}           # Working directory
+SENDECF=${SENDECF:-"NO"}   # Send message to ecflow
+ECF_NAME=${ECF_NAME:-""}    # Name of the ECF Job
+PBS_JOBID=${PBS_JOBID:-""} # PBS Job ID
+
+msg1=${@:-Job ${jobid} failed}
+if [[ -n "${pgm}" ]]; then
+    msg1+=", ERROR IN ${pgm}"
 fi
-if [ -n "$err" ]; then
-  msg1+=" RETURN CODE $err"
+if [[ -n "${err}" ]]; then
+    msg1+=" RETURN CODE ${err}"
 fi
 
 msg2="
 -------------------------------------------------------------
--- FATAL ERROR: $msg1
--- ABNORMAL EXIT at $(date) on $HOSTNAME
+-- FATAL ERROR: ${msg1}
+-- ABNORMAL EXIT at $(date) on ${HOSTNAME}
 -------------------------------------------------------------
 "
 
->&2 echo "$msg2"
+>&2 echo "${msg2}"
 
 # list loaded modules
 module list
 >&2 echo ""
 
->&2 echo "$msg1"
+>&2 echo "${msg1}"
 
 # list files in temporary working directory
-if [ -n "$DATA" ]; then
-  >&2 echo $DATA
-  >&2 ls -ltr $DATA
+if [[ -n "${DATA}" ]]; then
+    >&2 echo "${DATA}"
+    >&2 ls -ltr "${DATA}"
 else
-  >&2 echo "WARNING: DATA variable not defined"
+    >&2 echo "WARNING: DATA variable not defined"
 fi
 
 # save standard output
-if [ -n "$pgmout" ]; then
-  if [ -s errfile ]; then
-    echo "----- contents of errfile -----" >> $pgmout
-    cat errfile >> $pgmout
-  fi
-  >&2 cat $pgmout
-elif [ -s errfile ]; then
-  >&2 cat errfile
+if [[ -n "${pgmout}" ]]; then
+    if [[ -s errfile ]]; then
+        echo "----- contents of errfile -----" >> "${pgmout}"
+        cat errfile >> "${pgmout}"
+    fi
+    >&2 cat "${pgmout}"
+elif [[ -s errfile ]]; then
+    >&2 cat errfile
 fi
 
 # Write to ecflow log:
-if [ "$SENDECF" = "YES" ]; then
-  timeout 30 ecflow_client --msg "$ECF_NAME: $msg1"
-  timeout 30 ssh $ECF_HOST "echo \"$msg2\" >> ${ECF_JOBOUT:?}"
+if [[ "${SENDECF}" == "YES" ]]; then
+    timeout 30 ecflow_client --msg "${ECF_NAME}: ${msg1}"
+    timeout 30 ssh "${ECF_HOST}" "echo \"${msg2}\" >> ${ECF_JOBOUT:?}"
 fi
 
 # KILL THE JOB:
-if [ -z $PBS_JOBID ]; then
-ecflow_client --kill=${ECF_NAME:?}
-else
-qdel $PBS_JOBID
+if [[ "${SENDECF}" == "YES" ]]; then
+    if [[ -n "${ECF_NAME}" ]]; then
+        echo "FATAL ERROR Unable to kill ecflow job as ECF_NAME variable is not set!!"
+    else
+        ecflow_client --kill="${ECF_NAME}"
+    fi
+fi
+
+if [[ -n "${PBS_JOBID}" ]]; then
+    qdel "${PBS_JOBID}"
+elif [[ -n "${SLURM_JOB_ID}" ]]; then
+    scancel "${SLURM_JOB_ID}"
 fi
