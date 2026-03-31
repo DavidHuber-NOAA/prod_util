@@ -17,9 +17,10 @@ COREROOT=${COREROOT:-""}   # Directory to copy core files to
 DATA=${DATA:-""}           # Working directory
 SENDECF=${SENDECF:-"NO"}   # Send message to ecflow
 ECF_NAME=${ECF_NAME:-""}   # Name of the ECF Job
-PBS_JOBID=${PBS_JOBID:-""} # PBS Job ID
 ECF_HOST=${ECF_HOST:-""}   # ecflow hostname
 ECF_JOBOUT=${ECF_JOBOUT:-""} # ecflow job output file
+JOBID=${JOBID:-""}         # Scheduler Job ID e.g. $PBS_JOBID, $SLURM_ID, etc
+KILLJOB=${KILLJOB:-""}     # Scheduler command to kill a job e.g. qdel, scancel, etc
 
 msg1=${*:-Job ${jobid} failed}
 if [[ -n "${pgm}" ]]; then
@@ -73,17 +74,22 @@ if [[ "${SENDECF}" == "YES" ]]; then
     fi
 fi
 
-# KILL THE JOB:
+# KILL THE JOB VIA ECFLOW:
 if [[ "${SENDECF}" == "YES" ]]; then
     if [[ -n "${ECF_NAME}" ]]; then
         echo "FATAL ERROR Unable to kill ecflow job as ECF_NAME variable is not set!!"
     else
+        echo "Killing the job via ecflow kill"
         ecflow_client --kill="${ECF_NAME}"
     fi
 fi
 
-if [[ -n "${PBS_JOBID}" ]]; then
-    qdel "${PBS_JOBID}"
-elif [[ -n "${SLURM_JOB_ID}" ]]; then
-    scancel "${SLURM_JOB_ID}"
+# KILL THE JOB VIA JOB SCHEDULER COMMAND:
+if [[ -n "${KILLJOB}" && -n "${JOBID}" ]]; then
+    echo "Killing the job via ${KILLJOB}"
+    ${KILLJOB} ${JOBID}
+else
+    echo "Could not find a scheduler command or job ID to kill the current job"
+    echo "KILLJOB = ${KILLJOB}"
+    echo "JOBID   = ${JOBID}"
 fi
