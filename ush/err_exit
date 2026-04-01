@@ -76,16 +76,14 @@ fi
 
 # KILL THE JOB VIA ECFLOW:
 if [[ "${SENDECF}" == "YES" ]]; then
-    if [[ -n "${ECF_NAME}" ]]; then
+    if [[ -z "${ECF_NAME}" ]]; then
         echo "FATAL ERROR Unable to kill ecflow job as ECF_NAME variable is not set!!"
     else
         echo "Killing the job via ecflow kill"
         ecflow_client --kill="${ECF_NAME}"
     fi
-fi
-
 # KILL THE JOB VIA JOB SCHEDULER COMMAND:
-if [[ -n "${KILLJOB}" && -n "${JOBID}" ]]; then
+elif [[ -n "${KILLJOB}" && -n "${JOBID}" ]]; then
     echo "Killing the job via ${KILLJOB}"
     ${KILLJOB} ${JOBID}
 else
