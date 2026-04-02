@@ -13,7 +13,6 @@ err=${err:-""}             # Return code from program
 pgm=${pgm:-""}             # Program name
 pgmout=${pgmout:-""}       # Program output file
 jobid=${jobid:-"UNKNOWN"}  # Job ID
-COREROOT=${COREROOT:-""}   # Directory to copy core files to
 DATA=${DATA:-""}           # Working directory
 SENDECF=${SENDECF:-"NO"}   # Send message to ecflow
 ECF_NAME=${ECF_NAME:-""}   # Name of the ECF Job
