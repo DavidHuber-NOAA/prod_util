@@ -2,7 +2,8 @@
 
 # Written by Gemini v3.1 Pro. Modified and reviewed by a human.
 
-SCRIPT_UNDER_TEST=$( realpath "ush/err_exit" )
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_UNDER_TEST=$( realpath "${TEST_DIR}/../ush/err_exit" )
 
 # --- Framework UI ---
 PASSED=0
