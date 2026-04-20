@@ -98,19 +98,19 @@ test_data_warning_when_unset() {
 test_ls_when_data_set() {
     setup
     export DATA="$TEST_TEMP_DIR"
-   
-    # Mock ls for predictable output matching
-    ls() { echo "mock_ls $1 $2"; }
-    export -f ls
-    
+    export LMOD_SH_DBG_ON=1
+
     local output
-    output=$($SCRIPT_UNDER_TEST 2>&1)
+    output=$(bash -x $SCRIPT_UNDER_TEST 2>&1)
    
-    if [[ "$output" == *"mock_ls -ltr $TEST_TEMP_DIR"* ]]; then
+    if [[ "$output" == *"ls -ltr $TEST_TEMP_DIR"* ]]; then
         pass "$FUNCNAME"
     else
-        fail "$FUNCNAME" "Failed to find 'mock_ls' call. Output: $output"
+        fail "$FUNCNAME" "Failed to find 'ls -ltr $TEST_TEMP_DIR' call. Output: "
+        echo "$output"
     fi
+
+    unset LMOD_SH_DBG_ON
     teardown
 }
 
