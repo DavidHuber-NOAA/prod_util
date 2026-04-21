@@ -27,7 +27,7 @@ setup() {
     export TEST_TEMP_DIR="$(mktemp -d)"
     
     # Unset all potential environment variables to ensure a clean state
-    unset jobid pgm err DATA pgmout SENDECF ECF_HOST ECF_JOBOUT PBS_JOBID
+    unset jobid pgm err DATA pgmout SENDECF ECF_HOST ECF_JOBOUT PBS_JOBID ECF_NAME JOBID KILLJOB
     
     # Provide a default ECF_NAME so the script doesn't abort early on ${ECF_NAME:?}
     export ECF_NAME="mock_ecf_job"
@@ -150,6 +150,53 @@ test_sendecf_yes() {
     teardown
 }
 
+test_ecflow_log_no_ecf_jobout() {
+    setup
+    export SENDECF="YES"
+    export ECF_JOBOUT="/path/to/ecf.out"
+
+    local output
+    output=$($SCRIPT_UNDER_TEST 2>&1)
+
+    if [[ "$output" == *"FATAL ERROR Unable to write to ecflow server as either ECF_HOST or ECF_JOBOUT are undefined!!"* ]]; then
+        pass "$FUNCNAME"
+    else
+        fail "$FUNCNAME" "ecFlow log written when ECF_HOST is empty. Output: $output"
+    fi
+    teardown
+}
+
+test_ecflow_log_no_ecf_host() {
+    setup
+    export SENDECF="YES"
+    export ECF_HOST="my-ecflow-host"
+
+    local output
+    output=$($SCRIPT_UNDER_TEST 2>&1)
+
+    if [[ "$output" == *"FATAL ERROR Unable to write to ecflow server as either ECF_HOST or ECF_JOBOUT are undefined!!"* ]]; then
+        pass "$FUNCNAME"
+    else
+        fail "$FUNCNAME" "ecFlow log written when ECF_JOBOUT is empty. Output: $output"
+    fi
+    teardown
+}
+
+test_ecflow_log_no_ecf_jobout_no_ecf_host() {
+    setup
+    export SENDECF="YES"
+
+    local output
+    output=$($SCRIPT_UNDER_TEST 2>&1)
+
+    if [[ "$output" == *"FATAL ERROR Unable to write to ecflow server as either ECF_HOST or ECF_JOBOUT are undefined!!"* ]]; then
+        pass "$FUNCNAME"
+    else
+        fail "$FUNCNAME" "ecFlow log written when ECF_HOST and ECF_JOBOUT are empty. Output: $output"
+    fi
+    teardown
+}
+
 test_kill_via_ecflow_when_no_pbs() {
     setup
     # PBS_JOBID is unset
@@ -167,6 +214,26 @@ test_kill_via_ecflow_when_no_pbs() {
     teardown
 }
 
+test_kill_via_ecflow_no_ecf_name() {
+    setup
+
+    export SENDECF="YES"
+    export ECF_HOST="my-ecflow-host"
+    export ECF_JOBOUT="/path/to/ecf.out"
+    export ECF_NAME=""
+    export JOBID="12345.scheduler"
+
+    local output
+    output=$($SCRIPT_UNDER_TEST 2>&1)
+
+    if [[ "$output" == *"FATAL ERROR Unable to kill ecflow job as ECF_NAME variable is not set!!"* ]]; then
+        pass "$FUNCNAME"
+    else
+        fail "$FUNCNAME" "Expected qdel call missing or JOBID not set properly. Output: $output"
+    fi
+    teardown
+}
+
 test_kill_via_qdel_when_pbs_set() {
     setup
     export PBS_JOBID="12345.scheduler"
@@ -178,6 +245,22 @@ test_kill_via_qdel_when_pbs_set() {
         pass "$FUNCNAME"
     else
         fail "$FUNCNAME" "Expected qdel call missing or ecflow called improperly. Output: $output"
+    fi
+    teardown
+}
+
+test_kill_via_qdel_no_pbs_jobid() {
+    setup
+
+    local output
+    output=$($SCRIPT_UNDER_TEST 2>&1)
+
+    if [[ "$output" == *"Could not find a scheduler command or job ID to kill the current job"* ]] && \
+        [[ "$output" == *"KILLJOB = qdel"* ]] && \
+        echo "$output" | grep -qE "^JOBID   = $" ; then
+        pass "$FUNCNAME"
+    else
+        fail "$FUNCNAME" "Expected failure did not occur when JOBID is empty. Output: $output"
     fi
     teardown
 }
@@ -199,8 +282,13 @@ test_data_warning_when_unset
 test_ls_when_data_set
 test_errfile_appends_to_pgmout
 test_sendecf_yes
+test_ecflow_log_no_ecf_jobout
+test_ecflow_log_no_ecf_host
+test_ecflow_log_no_ecf_jobout_no_ecf_host
 test_kill_via_ecflow_when_no_pbs
+test_kill_via_ecflow_no_ecf_name
 test_kill_via_qdel_when_pbs_set
+test_kill_via_qdel_no_pbs_jobid
 
 echo "-------------------------------------------------------------"
 echo "Test Run Complete: $PASSED passed, $FAILED failed."
