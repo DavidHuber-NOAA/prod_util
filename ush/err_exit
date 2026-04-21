@@ -18,8 +18,8 @@ SENDECF=${SENDECF:-"NO"}   # Send message to ecflow
 ECF_NAME=${ECF_NAME:-""}   # Name of the ECF Job
 ECF_HOST=${ECF_HOST:-""}   # ecflow hostname
 ECF_JOBOUT=${ECF_JOBOUT:-""} # ecflow job output file
-JOBID=${JOBID:-""}         # Scheduler Job ID e.g. $PBS_JOBID, $SLURM_ID, etc
-KILLJOB=${KILLJOB:-""}     # Scheduler command to kill a job e.g. qdel, scancel, etc
+JOBID=${JOBID:-$PBS_JOBID}   # Scheduler Job ID e.g. $PBS_JOBID, $SLURM_ID, etc
+KILLJOB=${KILLJOB:-qdel}     # Scheduler command to kill a job e.g. qdel, scancel, etc
 
 msg1=${*:-Job ${jobid} failed}
 if [[ -n "${pgm}" ]]; then
