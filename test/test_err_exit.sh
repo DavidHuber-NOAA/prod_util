@@ -140,7 +140,7 @@ test_sendecf_yes() {
     local output
     output=$($SCRIPT_UNDER_TEST 2>&1)
     
-    if [[ "$output" == *"mock_timeout 30 mock_ecflow_client --msg mock_ecf_job: Job failed"* ]] && \
+    if [[ "$output" == *"mock_timeout 30 mock_ecflow_client --msg mock_ecf_job: Job UNKNOWN failed"* ]] && \
        [[ "$output" == *"mock_timeout 30 mock_ssh my-ecflow-host echo"* ]] && \
        [[ "$output" == *">> $ECF_JOBOUT"* ]]; then
         pass "$FUNCNAME"
@@ -153,6 +153,9 @@ test_sendecf_yes() {
 test_kill_via_ecflow_when_no_pbs() {
     setup
     # PBS_JOBID is unset
+
+    export SENDECF="YES"
+
     local output
     output=$($SCRIPT_UNDER_TEST 2>&1)
     
