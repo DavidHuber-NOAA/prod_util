@@ -69,11 +69,8 @@ export err=$?; err_chk
 # Detect if setpdy is being sourced. If sourced, export PDY variables directly. Otherwise, write a PDY file to be sourced.
 (return 0 2>/dev/null) && sourced=1 || sourced=0
 
-# Write the PDY file so it can be sourced in the parent script.
 # Cut date-line to form PDY variables
-if [ -f PDY ]; then
-   rm PDY
-fi
+if [ -f PDY ]; then rm PDY; fi
 
 for d in $(seq $dates_before_PDY -1 1); do
    # cut the date starting at position ($d-1)*9 from date-line
