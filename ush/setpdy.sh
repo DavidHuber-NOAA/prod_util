@@ -8,6 +8,7 @@
 #             PDYp2, ..., PDYp7.
 # History: Jul 27, 1998 - Implement new script
 #          sep 17, 2015 - Add ability to specify number of dates
+#          Apr 23, 2026 - Add ability to source setpdy.sh directly
 # Usage:
 #    setpdy.sh
 #       Generate PDY script with PDYm7 to PDYp7 variables
@@ -65,18 +66,45 @@ export err=$?; err_chk
 DATElne_plus=$(finddate.sh $PDY s+${dates_after_PDY})
 export err=$?; err_chk
 
+# Detect if setpdy is being sourced. If sourcing, we will add PDY variables to the environment. Otherwise, write a PDY file to be sourced in the parent script.
+(return 0 2>/dev/null) && sourced=1 || sourced=0
+
+# Write the PDY file so it can be sourced in the parent script.
 # Cut date-line to form PDY variables
-if [ -f PDY ]; then rm PDY; fi
+if [ -f PDY ]; then
+   rm PDY
+fi
 for d in $(seq $dates_before_PDY -1 1); do
    # cut the date starting at position ($d-1)*9 from date-line
-   echo "export PDYm${d}=${DATElne_minus:((($d-1)*9)):8}" >>PDY
+   lhs=PDYm${d}
+   rhs=${DATElne_minus:((($d-1)*9)):8}
+   if [ $sourced -eq 1 ]; then
+      declare -x ${lhs}=${rhs}
+   else
+      echo "export ${lhs}=${rhs}" >>PDY
+   fi
 done
-echo "export PDY=$PDY" >>PDY
+
+lhs=PDY
+rhs=$PDY
+if [ $sourced -eq 1 ]; then
+   declare -x ${lhs}=${rhs}
+else
+   echo "export ${lhs}=${rhs}" >>PDY
+fi
+
 for d in $(seq $dates_after_PDY); do
    # cut the date starting at position ($d-1)*9 from date-line
-   echo "export PDYp${d}=${DATElne_plus:((($d-1)*9)):8}" >>PDY
+   lhs=PDYp${d}
+   rhs=${DATElne_plus:((($d-1)*9)):8}
+   if [ $sourced -eq 1 ]; then
+      declare -x ${lhs}=${rhs}
+   else
+      echo "export ${lhs}=${rhs}" >>PDY
+   fi
 done
 
-chmod u+x PDY
-
-echo "Source PDY script to export PDYm${dates_before_PDY}, ..., PDY, ..., PDYp${dates_after_PDY} variables."
+if [ $sourced -eq 0 ]; then
+   chmod u+x PDY
+   echo "Source PDY script to export PDYm${dates_before_PDY}, ..., PDY, ..., PDYp${dates_after_PDY} variables."
+fi
